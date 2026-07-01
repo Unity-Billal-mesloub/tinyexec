@@ -95,6 +95,17 @@ describe('exec (async)', () => {
     expect(proc.exitCode).toBe(1);
   });
 
+  test('async iterator throws when throwOnError=true and process is killed by signal', async () => {
+    const proc = x('node', ['-e', 'process.kill(process.pid, "SIGTERM")'], {
+      throwOnError: true
+    });
+    await expect(async () => {
+      for await (const _line of proc) {
+        // consume iterator
+      }
+    }).rejects.toThrow(NonZeroExitError);
+  });
+
   test('supports stdin passed as a string', async () => {
     let result = await x('node', ['-e', 'process.stdin.pipe(process.stdout)'], {
       stdin: 'foo\nbar'
@@ -265,6 +276,24 @@ if (isWindows) {
         fs.rmSync(dir, {recursive: true, force: true});
       }
     });
+
+    test('throws when throwOnError=true and process is killed by signal', async () => {
+      const proc = x('node', ['-e', 'process.kill(process.pid, "SIGTERM")'], {
+        throwOnError: true
+      });
+      try {
+        await proc;
+        expect.fail('Expected to throw');
+      } catch (err) {
+        expect.assert(err instanceof NonZeroExitError);
+        expect(err.message).toBe(
+          'The command `node -e "process.kill(process.pid, \\"SIGTERM\\")"` exited with a non-zero status (1)'
+        );
+        expect(err.signalCode).toBe(null);
+      }
+      expect(proc.exitCode).toBe(1);
+      expect(proc.signalCode).toBe(null);
+    });
   });
 
   describe('exec (windows) (sync)', () => {
@@ -302,6 +331,20 @@ if (isWindows) {
         expect(result.stdout).toBe('local\r\n');
       } finally {
         fs.rmSync(dir, {recursive: true, force: true});
+      }
+    });
+
+    test('killed by signal throws when throwOnError=true', () => {
+      try {
+        xSync('node', ['-e', 'process.kill(process.pid, "SIGTERM")'], {
+          throwOnError: true
+        });
+        expect.fail('Expected to throw');
+      } catch (err) {
+        expect(err instanceof NonZeroExitError).ok;
+        expect((err as NonZeroExitError).message).toBe(
+          'The command `node -e "process.kill(process.pid, \\"SIGTERM\\")"` exited with a non-zero status (1)'
+        );
       }
     });
   });
@@ -460,6 +503,24 @@ if (!isWindows) {
         fs.rmSync(dir, {recursive: true, force: true});
       }
     });
+
+    test('throws when throwOnError=true and process is killed by signal', async () => {
+      const proc = x('node', ['-e', 'process.kill(process.pid, "SIGTERM")'], {
+        throwOnError: true
+      });
+      try {
+        await proc;
+        expect.fail('Expected to throw');
+      } catch (err) {
+        expect.assert(err instanceof NonZeroExitError);
+        expect(err.message).toBe(
+          'The command `node -e "process.kill(process.pid, \\"SIGTERM\\")"` was killed by the signal SIGTERM'
+        );
+        expect(err.signalCode).toBe('SIGTERM');
+      }
+      expect(proc.exitCode).toBeUndefined();
+      expect(proc.signalCode).toBe('SIGTERM');
+    });
   });
 
   describe('exec (unix-like) (sync)', () => {
@@ -500,6 +561,20 @@ if (!isWindows) {
         expect(result.stdout).toBe('local\n');
       } finally {
         fs.rmSync(dir, {recursive: true, force: true});
+      }
+    });
+
+    test('killed by signal throws when throwOnError=true', () => {
+      try {
+        xSync('node', ['-e', 'process.kill(process.pid, "SIGTERM")'], {
+          throwOnError: true
+        });
+        expect.fail('Expected to throw');
+      } catch (err) {
+        expect(err instanceof NonZeroExitError).ok;
+        expect((err as NonZeroExitError).message).toBe(
+          'The command `node -e "process.kill(process.pid, \\"SIGTERM\\")"` was killed by the signal SIGTERM'
+        );
       }
     });
   });
