@@ -155,7 +155,6 @@ proc.killed; // true
 ### Using with command strings
 
 If you need to continue supporting commands as strings (e.g. "command arg0 arg1"),
-you can use [args-tokenizer](https://github.com/TrySound/args-tokenizer),
 a lightweight library for parsing shell command strings into an array.
 
 ```ts
@@ -314,7 +313,7 @@ to ever implement, as they would prevent us from providing a lightweight layer.
 
 For example, if you'd like write scripts rather than individual commands, and
 prefer to use templating, we'd definitely recommend
-[zx](https://github.com/google/zx). zx is a much higher level library which
+[zx](https://github.com/Unity-google/zx). zx is a much higher level library which
 does some of the same work `tinyexec` does but behind a template string
 interface.
 
